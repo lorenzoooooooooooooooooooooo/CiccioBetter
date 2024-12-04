@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slot Machine - Tema Matematica</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #8e44ad, #3498db); /* Sfondo con gradiente */
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            padding: 30px;
+            width: 400px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 40px;
+            margin-bottom: 20px;
+            color: #f39c12;
+            text-shadow: 0 0 10px #f39c12;
+        }
+
+        .slot-machine {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .slot {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            border: 3px solid #1abc9c;
+            border-radius: 10px;
+            height: 100px;
+            font-size: 36px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            transition: transform 0.3s ease-in-out, background-color 0.3s ease;
+        }
+
+        .slot.vincita {
+            animation: glow 1s infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 10px #f39c12, 0 0 20px #f39c12;
+            }
+            to {
+                box-shadow: 0 0 20px #f1c40f, 0 0 30px #f1c40f;
+            }
+        }
+
+        button {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: #fff;
+            font-size: 18px;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            transition: background-color 0.3s ease, transform 0.2s ease-in-out;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, #c0392b, #e74c3c);
+            transform: scale(1.05);
+        }
+
+        .controls p {
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .modal-content button {
+            background: linear-gradient(135deg, #16a085, #1abc9c);
+            color: #fff;
+            padding: 15px;
+            font-size: 18px;
+            border: none;
+            border-radius: 50px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CiccioSlot</h1>
+        <div class="slot-machine">
+            <div id="slot1" class="slot"></div>
+            <div id="slot2" class="slot"></div>
+            <div id="slot3" class="slot"></div>
+            <div id="slot4" class="slot"></div>
+            <div id="slot5" class="slot"></div>
+            <div id="slot6" class="slot"></div>
+            <div id="slot7" class="slot"></div>
+            <div id="slot8" class="slot"></div>
+            <div id="slot9" class="slot"></div>
+        </div>
+
+        <div class="controls">
+            <p>SALDO: <span id="saldo">10</span>€</p>
+            <button id="chooseBetButton" onclick="apriModal()">SCEGLI PUNTATA</button>
+            <button id="playButton" onclick="gioca()">SPINNA</button>
+        </div>
+    </div>
+
+<!-- Finestra modale per la scelta della puntata -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="chiudiModal()">&times;</span>
+        <h2>Scegli la Puntata</h2>
+        <button onclick="impostaPuntata(0.20)">0,20€</button>
+        <button onclick="impostaPuntata(0.50)">0,50€</button>
+        <button onclick="impostaPuntata(1)">1€</button>
+        <button onclick="impostaPuntata(2)">2€</button>
+        <button onclick="impostaPuntata(4)">4€</button>
+        <button onclick="impostaPuntata(5)">5€</button>
+        <button onclick="impostaPuntata(10)">10€</button>
+        <button onclick="impostaPuntata(25)">25€</button>
+        <button onclick="impostaPuntata(50)">50€</button>
+        <button onclick="impostaPuntata(75)">75€</button>
+        <button onclick="impostaPuntata(100)">100€</button>
+    </div>
+</div>
+
+
+    <script>
+        let saldo = 10;
+        let puntata = 1;
+
+        // Funzione per generare un simbolo casuale con probabilità definite
+        function getRandomSymbol() {
+            const symbols = [
+                { symbol: '1', weight: 20 },
+                { symbol: '2', weight: 20 },
+                { symbol: '3', weight: 20 },
+                { symbol: '+', weight: 25 },
+                { symbol: '-', weight: 10 },
+                { symbol: 'x', weight: 5 }
+            ];
+
+            const totalWeight = symbols.reduce((sum, s) => sum + s.weight, 0);
+            const random = Math.random() * totalWeight;
+
+            let cumulativeWeight = 0;
+            for (let i = 0; i < symbols.length; i++) {
+                cumulativeWeight += symbols[i].weight;
+                if (random < cumulativeWeight) {
+                    return symbols[i].symbol;
+                }
+            }
+        }
+
+        function verificaVincita(slots) {
+            const linee = [
+                [slots[0], slots[1], slots[2]],
+                [slots[3], slots[4], slots[5]],
+                [slots[6], slots[7], slots[8]]
+            ];
+
+            let vincita = 0;
+            linee.forEach((linea, index) => {
+                if (linea[0] === linea[1] && linea[1] === linea[2]) {
+                    vincita += 10; // Es. 10 per linea vincente
+                    linea.forEach((_, i) => {
+                        document.getElementById(`slot${index * 3 + i + 1}`).classList.add("vincita");
+                    });
+                }
+            });
+
+            return vincita;
+        }
+
+        function gioca() {
+            if (saldo < puntata) {
+                alert("Saldo insufficiente!");
+                return;
+            }
+
+            saldo -= puntata;
+            saldo = parseFloat(saldo.toFixed(2));
+            document.getElementById('saldo').textContent = saldo.toFixed(2);
+
+// Rimuovi la classe vincita per eliminare l'effetto glow
+for (let i = 0; i < 9; i++) {
+            document.getElementById(`slot${i + 1}`).classList.remove("vincita");
+        }
+
+
+
+            let slots = [];
+            for (let i = 0; i < 9; i++) {
+                const simbolo = getRandomSymbol();
+                document.getElementById(`slot${i + 1}`).textContent = simbolo;
+                slots.push(simbolo);
+                document.getElementById(`slot${i + 1}`).classList.add('spin-animation');
+            }
+
+            setTimeout(() => {
+                const vincita = verificaVincita(slots);
+                saldo += vincita;
+
+                if (vincita > 0) {
+                    alert(`Hai vinto ${vincita}€!`);
+                }
+
+                document.getElementById('saldo').textContent = saldo;
+
+                // Rimuove l'animazione dopo che è finita
+                for (let i = 1; i <= 9; i++) {
+                    document.getElementById(`slot${i}`).classList.remove('spin-animation');
+                }
+            }, 500);
+        }
+
+        // Funzione per aprire la finestra modale
+        function apriModal() {
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        // Funzione per chiudere la finestra modale
+        function chiudiModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Funzione per impostare la puntata
+        function impostaPuntata(value) {
+            puntata = value;
+            document.getElementById('modal').style.display = 'none';
+            alert(`Puntata impostata a ${puntata}€`);
+        }
+    </script>
+</body>
+</html>

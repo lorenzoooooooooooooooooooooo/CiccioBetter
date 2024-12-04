@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gioco Aviator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        header {
+            background-color: #34495e;
+            padding: 20px;
+            font-size: 2em;
+            color: #ecf0f1;
+        }
+        h1 {
+            margin: 20px 0;
+            font-size: 2.5em;
+            color: #ecf0f1;
+        }
+        .container {
+            padding: 40px;
+            background-color: #34495e;
+            border-radius: 15px;
+            margin: 40px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .button {
+            background-color: #28a745;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            transition: background-color 0.3s ease;
+        }
+        .button:hover {
+            background-color: #218838;
+        }
+        footer {
+            background-color: #34495e;
+            color: white;
+            padding: 10px 0;
+            margin-top: 40px;
+            font-size: 1em;
+        }
+        a {
+            color: #ecf0f1;
+        }
+        .leaderboard-section {
+            display: none;
+            margin-top: 40px;
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .leaderboard-header {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+        }
+        /* Form di registrazione */
+        .registration-container {
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 40px;
+            display: inline-block;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 1em;
+            margin-right: 10px;
+            border-radius: 5px;
+            border: 1px solid #ecf0f1;
+            color: #34495e;
+        }
+        canvas {
+            margin-top: 20px;
+            border: 2px solid #ecf0f1;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        AVIATOR
+    </header>
+
+    <h1>AVIATOR: Powered by CiccioBet</h1>
+
+    
+
+    <div class="container">
+        <p>Se sei stanco di spendere soldi, colma la tua ludopatia cliccando il pulsante.</p>
+        <a href="aviator.html" class="button">AVIATOR</a>
+    <a href="slot.html" class="button" >SLOT</a>
+    <a href="grattaevinci.html" class="button" >GRATTA&VINCI</a>
+    </div>
+
+
+    
+
+    <script>
+        // Funzione per caricare il logo nel canvas
+        function loadLogo() {
+            const canvas = document.getElementById('cicciobet.png');
+            const ctx = canvas.getContext('2d');
+            const logo = new Image();
+            logo.src = 'cicciobet.png';  // Carica il logo dal file cicciobet.png
+
+            logo.onload = function() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);  // Pulisce il canvas
+                ctx.drawImage(logo, 0, 0, canvas.width, canvas.height);  // Disegna l'immagine
+            };
+        }
+
+        // Carica il logo all'avvio della pagina
+        window.onload = function() {
+            loadLeaderboard();
+            loadLogo();  // Carica il logo
+        };
+
+    </script>
+</body>
+</html>

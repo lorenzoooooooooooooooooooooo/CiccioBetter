@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gratta e Vinci - Premio Speciale</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #e0f7fa;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            flex-direction: column;
+        }
+
+        .container {
+            position: relative;
+            width: 480px;
+            height: 280px;
+            background: linear-gradient(45deg, #ffcc00, #ff6600, #ff0066);
+            background-size: 200% 200%;
+            animation: gradientAnimation 5s ease infinite;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container h1 {
+            font-size: 32px;
+            color: #fff;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
+            margin: 20px;
+        }
+
+        .scratcher {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            cursor: pointer;
+            border-radius: 15px;
+            z-index: 2;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 15px;
+        }
+
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+            display: none;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .prize {
+            font-size: 36px;
+            font-weight: bold;
+            color: #ff4500;
+        }
+
+        .input-container {
+            margin-top: 20px;
+            color: #fff;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            color: red;
+            font-size: 18px;
+        }
+
+        select {
+            width: 120px;
+            padding: 8px;
+            font-size: 18px;
+            margin-top: 10px;
+            border-radius: 5px;
+        }
+
+        .reveal {
+            animation: fadeIn 1s ease-out;
+        }
+
+        #buyButton {
+            display: none;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #ff6600;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        #buyButton:hover {
+            background-color: #ff4500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>GRATTAMI!</h1>
+        <div class="scratcher" id="scratcher">
+            <canvas id="scratchCanvas"></canvas>
+            <div class="message" id="winMessage">
+                HAI VINTO <span class="prize" id="prizeAmount"></span>!
+            </div>
+        </div>
+    </div>
+
+    <div class="input-container">
+        <label for="priceSelect">PREZZO BIGLIETTO:</label>
+        <select id="priceSelect">
+            <option value="0.10">0,10€</option>
+            <option value="0.20">0,20€</option>
+            <option value="0.50">0,50€</option>
+            <option value="1">1€</option>
+            <option value="2">2€</option>
+            <option value="5">5€</option>
+            <option value="10">10€</option>
+            <option value="20">20€</option>
+        </select>
+    </div>
+
+    <!-- Pulsante Compra che appare dopo la selezione del prezzo -->
+    <button id="buyButton">COMPRA PER GRATTARE</button>
+
+    <script>
+        const canvas = document.getElementById("scratchCanvas");
+        const ctx = canvas.getContext("2d");
+        const scratcher = document.getElementById("scratcher");
+        const winMessage = document.getElementById("winMessage");
+        const prizeAmount = document.getElementById("prizeAmount");
+        const priceSelect = document.getElementById("priceSelect");
+        const buyButton = document.getElementById("buyButton");
+
+        // Impostazioni canvas
+        canvas.width = scratcher.offsetWidth;
+        canvas.height = scratcher.offsetHeight;
+
+        // Probabilità di vincita
+        const winProbabilities = [
+            { chance: 81, prize: "€0" },
+            { chance: 10, prize: "€1" },
+            { chance: 5, prize: "€5" },
+            { chance: 3, prize: "€50" },
+            { chance: 1, prize: "€100" }
+        ];
+
+        let prize = ""; // Premio variabile che sarà determinato in base alle probabilità
+        let selectedPrice = 0; // Prezzo selezionato
+
+        // Numero di celle
+        const cellSize = 20;
+        const cols = Math.floor(canvas.width / cellSize);
+        const rows = Math.floor(canvas.height / cellSize);
+
+        // Inizializza la zona grattabile con celle
+        let cells = [];
+        for (let i = 0; i < cols; i++) {
+            for (let j = 0; j < rows; j++) {
+                cells.push({ x: i * cellSize, y: j * cellSize, scratched: false });
+            }
+        }
+
+        let scratchedArea = 0;
+        let totalArea = cells.length;
+        let isMouseDown = false;
+
+        // Aggiungi variabili per tracciare la zona grattata
+        function addCoverLayer() {
+            ctx.fillStyle = "#808080";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        canvas.addEventListener("mousedown", (e) => {
+            isMouseDown = true;
+            scratch(e);
+        });
+
+        canvas.addEventListener("mousemove", (e) => {
+            if (isMouseDown) {
+                scratch(e);
+            }
+        });
+
+        canvas.addEventListener("mouseup", () => {
+            isMouseDown = false;
+            checkWin();
+        });
+
+// Aggiunta per il supporto del touchscreen
+canvas.addEventListener("touchstart", (e) => {
+    e.preventDefault();  // Previene il comportamento di default (scorrimento della pagina)
+    isMouseDown = true;
+    scratch(e);
+});
+
+canvas.addEventListener("touchmove", (e) => {
+    e.preventDefault();  // Previene il comportamento di default (scorrimento della pagina)
+    if (isMouseDown) {
+        scratch(e);
+    }
+});
+
+canvas.addEventListener("touchend", () => {
+    isMouseDown = false;
+    checkWin();
+});
+
+
+
+function scratch(e) {
+    let x, y;
+    // Se è un evento di mouse
+    if (e.type === 'mousedown' || e.type === 'mousemove' || e.type === 'mouseup') {
+        const rect = canvas.getBoundingClientRect();
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+    }
+    // Se è un evento di tocco
+    else if (e.type === 'touchstart' || e.type === 'touchmove' || e.type === 'touchend') {
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];  // Usa il primo tocco
+        x = touch.clientX - rect.left;
+        y = touch.clientY - rect.top;
+    }
+            const startX = Math.floor(x / cellSize) * cellSize;
+            const startY = Math.floor(y / cellSize) * cellSize;
+
+            for (let dx = 0; dx < 4; dx++) {
+                for (let dy = 0; dy < 4; dy++) {
+                    const cell = cells.find(cell => cell.x === startX + dx * cellSize && cell.y === startY + dy * cellSize);
+                    if (cell && !cell.scratched) {
+                        ctx.clearRect(cell.x, cell.y, cellSize, cellSize);
+                        cell.scratched = true;
+                        scratchedArea++;
+                    }
+                }
+            }
+        }
+
+        function checkWin() {
+            const scratchedPercentage = scratchedArea / totalArea;
+
+            if (scratchedPercentage === 1 && !winMessage.style.display) {
+                const randomChance = Math.random() * 100;
+                let cumulativeChance = 0;
+                for (const prizeOption of winProbabilities) {
+                    cumulativeChance += prizeOption.chance;
+                    if (randomChance < cumulativeChance) {
+                        prize = prizeOption.prize;
+                        break;
+                    }
+                }
+
+                // Calcola la vincita
+                const totalPrize = selectedPrice * parseInt(prize.replace('€', '').replace('STA BELLA ZOMPA', '0'));
+
+                winMessage.style.display = "block";
+                prizeAmount.textContent = `${totalPrize}€`;
+                winMessage.classList.add("reveal");
+
+                instantScratch();
+            }
+        }
+
+        function instantScratch() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        window.onload = () => {
+            addCoverLayer();
+        }
+
+        // Mostra il pulsante Compra quando viene selezionato un prezzo
+        priceSelect.addEventListener('change', () => {
+            selectedPrice = parseFloat(priceSelect.value);
+            buyButton.style.display = 'inline-block';
+        });
+
+        // Gestione click su Compra
+        buyButton.addEventListener('click', () => {
+            addCoverLayer();
+        });
+    </script>
+
+</body>
+</html>
